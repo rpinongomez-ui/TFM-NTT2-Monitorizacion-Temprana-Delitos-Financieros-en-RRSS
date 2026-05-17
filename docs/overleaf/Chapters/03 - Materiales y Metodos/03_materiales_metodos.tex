@@ -1,0 +1,62 @@
+\subsection{Diseño general del estudio}
+
+El presente trabajo adopta un diseño metodológico de carácter exploratorio-descriptivo con componente comparativo, articulado en torno a un \textit{pipeline} de procesamiento de lenguaje natural aplicado sobre un corpus de publicaciones en X (Twitter) recolectado durante el año 2025. El flujo de trabajo integra siete etapas principales: (1) extracción de datos mediante la API de X; (2) limpieza y preprocesamiento textual; (3) exploración temática no supervisada mediante BERTopic; (4) clasificación automática en categorías de fraude mediante modelo \textit{zero-shot}; (5) validación manual sobre muestra aleatoria; (6) traducción automática al español; y (7) análisis de patrones y evaluación de transferibilidad al contexto español.
+
+\subsection{Análisis de los Datos}
+
+Los datos son extraídos de la API de X y archivados en un \textit{DataFrame} estructurado. Cada observación extraída contiene texto no estructurado y metadatos asociados. Específicamente, cada registro incluye el identificador único del \textit{tweet}, la fecha de creación, el texto del mensaje, el idioma detectado, el autor (identificador y nombre de usuario), la ubicación declarada en el perfil, el lugar geográfico asociado al \textit{tweet} (cuando está disponible) y los contadores de interacción (\textit{retweets}, respuestas, «me gusta» y citas).
+
+Dado que el parámetro utilizado para la extracción consiste en la inclusión de palabras clave relacionadas con fraude, uno de los principales problemas metodológicos es que la base de datos inicial contiene muchas observaciones que no guardan relación con el fraude financiero. Sin embargo, estas observaciones resultan necesarias para que el modelo aprenda no solo a identificar los \textit{tweets} que efectivamente hablan sobre fraude, sino también aquellos que utilizan la palabra en contextos distintos (discurso político, \textit{memes}, entretenimiento). Esta discriminación es, de hecho, uno de los objetivos operativos del clasificador \textit{zero-shot} descrito en secciones posteriores.
+
+El \textit{dataset} utilizado contiene los \textit{tweets} publicados en Estados Unidos durante el año 2025 que cumplen con las características y parámetros determinados por la consulta. Para su extracción se utilizaron términos en inglés relacionados con fraude financiero, tales como \textit{scam}, \textit{fraud}, \textit{financial fraud}, \textit{wire fraud}, \textit{bank fraud}, \textit{investment scam}, \textit{Ponzi scheme}, \textit{embezzlement}, \textit{securities fraud}, \textit{crypto scam}, \textit{romance scam}, \textit{phishing scam}, \textit{pig butchering}, \textit{rug pull}, \textit{IRS scam}, \textit{tax scam}, \textit{Zelle scam}, \textit{Venmo scam} y \textit{Cash App scam}. Para filtrar ruido se excluyeron \textit{retweets} y respuestas, y se priorizaron \textit{tweets} con geolocalización en Estados Unidos o, en su defecto, escritos en inglés (con validación posterior mediante ubicación declarada en el perfil del usuario).
+
+\subsection{Estructura de los Datos}
+
+Los datos provenientes de la API de X se extraen en formato JSON y se transforman a formato tabular para almacenarlos en un \textit{DataFrame} de \textit{pandas}, lo que permite un análisis más eficiente. Cada fila corresponde a un \textit{tweet}, es decir, a una publicación individual. Las variables analizadas pueden agruparse en cuatro tipologías:
+
+\begin{itemize}
+    \item \textbf{Variables textuales no estructuradas:} el texto del \textit{tweet} y el nombre del autor, objeto principal del análisis lingüístico.
+    \item \textbf{Variables categóricas:} idioma detectado (\textit{lang}), código de país del lugar asociado, tipo de lugar (ciudad, estado, administración) y ubicación declarada en el perfil.
+    \item \textbf{Variables temporales:} fecha y hora de creación del \textit{tweet} (\textit{created\_at}), en formato ISO 8601 UTC, que permite análisis de evolución temporal del discurso.
+    \item \textbf{Variables numéricas:} contadores de interacción (\textit{retweets}, respuestas, «me gusta», citas), utilizados como indicadores de relevancia y viralización del mensaje.
+\end{itemize}
+
+\subsection{Ingesta de datos: fuente y consultas}
+
+La extracción se realizó mediante el \textit{endpoint} \texttt{search/all} de la API v2 de X, que permite acceso al archivo histórico completo con filtros temporales. La ventana de consulta se estableció entre el 1 de enero de 2025 y el 31 de diciembre de 2025 (UTC). La consulta combinó términos clave de fraude en inglés conectados mediante operadores booleanos OR, junto con filtros de geolocalización (\texttt{place\_country:US}) e idioma (\texttt{lang:en}), y exclusiones de \textit{retweets} y respuestas para evitar duplicación de contenido. La paginación se gestionó mediante \textit{tokens} de continuación (\texttt{next\_token}), con un tamaño de página de 500 resultados y un objetivo total aproximado de 20.000 \textit{tweets} antes de limpieza.
+
+Las peticiones se implementaron en Python utilizando la librería \texttt{requests}, incluyendo un mecanismo de \textit{backoff} exponencial para gestionar los errores HTTP 429 (límite de tasa) y un respeto estricto del límite de una petición por segundo establecido por el \textit{endpoint}. Los metadatos de usuario y lugar se recuperaron mediante los parámetros de expansiones (\texttt{expansions}) y campos adicionales (\texttt{user.fields}, \texttt{place.fields}) ofrecidos por la API, y se integraron con los \textit{tweets} mediante operaciones de \textit{join} por identificador.
+
+\subsection{Preprocesamiento y limpieza}
+
+El preprocesamiento se diseñó con dos niveles de intervención distintos, separando la limpieza destinada al análisis de la preservación del texto original. En el nivel de limpieza para modelado, se aplicaron las siguientes operaciones: eliminación de URLs, eliminación de menciones a otros usuarios (\texttt{@usuario}), conservación del contenido de los \textit{hashtags} eliminando el símbolo \texttt{\#}, normalización de espacios en blanco y filtrado de \textit{tweets} con menos de cuatro palabras tras limpieza. En paralelo, el texto original de cada \textit{tweet} se conservó íntegramente para su posterior traducción, de modo que las variantes limpiadas alimentan los modelos lingüísticos pero no se pierde información contextual para el análisis humano.
+
+Adicionalmente, se eliminaron duplicados exactos de texto, se descartaron \textit{tweets} en idiomas distintos al inglés (que representaban aproximadamente un 5\% del corpus inicial) y se aplicó un filtro de probabilidad geográfica basado en la combinación del código de país del \textit{place} asociado y en la presencia de términos geográficos estadounidenses en la ubicación declarada del perfil. Tras estas operaciones, el corpus final asciende a aproximadamente 14.000 \textit{tweets} válidos, que constituyen la base sobre la que se aplican el resto de las etapas del \textit{pipeline}.
+
+\subsection{Topic modeling exploratorio mediante BERTopic}
+
+La primera fase analítica consiste en una exploración temática no supervisada del corpus mediante BERTopic. Esta decisión metodológica responde a la recomendación de abordar el análisis sin imponer categorías a priori, permitiendo que los patrones discursivos emerjan de forma endógena del texto antes de aplicar ninguna clasificación supervisada. BERTopic resulta especialmente adecuado para textos cortos y ruidosos de redes sociales, donde los métodos clásicos como LDA suelen presentar baja coherencia semántica.
+
+La configuración adoptada utiliza como modelo de \textit{embeddings} \texttt{all-MiniLM-L6-v2}, un modelo \textit{Sentence-Transformer} ligero y eficiente en GPU que ofrece un buen equilibrio entre calidad y coste computacional. La reducción de dimensionalidad se realiza con UMAP (\texttt{n\_neighbors=15}, \texttt{n\_components=5}, \texttt{metric='cosine'}), el \textit{clustering} con HDBSCAN (\texttt{min\_cluster\_size=50}, \texttt{metric='euclidean'}, \texttt{cluster\_selection\_method='eom'}) y la extracción de términos representativos mediante un \texttt{CountVectorizer} con \textit{stop words} en inglés y n-gramas de tamaño 1-2. Los \textit{tweets} asignados al tópico $-1$ por HDBSCAN se consideran \textit{outliers} y se tratan como observaciones sin temática estable, manteniéndose en el análisis pero diferenciadas en los resúmenes agregados. Los resultados de BERTopic se interpretan como orientativos del paisaje temático del corpus y como insumo para la definición y validación de las categorías utilizadas en la fase supervisada posterior.
+
+\subsection{Clasificación supervisada en categorías de fraude (zero-shot)}
+
+Sobre la exploración temática, se aplica una clasificación \textit{zero-shot} mediante el modelo \texttt{facebook/bart-large-mnli}, un modelo BART entrenado con datos de inferencia en lenguaje natural (MNLI) que permite asignar etiquetas definidas sin necesidad de reentrenamiento. Las categorías utilizadas se han construido a partir de tipologías recogidas en el \textit{Consumer Sentinel Network Data Book 2024} de la FTC y en el balance INCIBE 2025, e incluyen: estafa de inversión o criptomonedas, estafa romántica, \textit{phishing} o robo de identidad, suplantación de organismos públicos (IRS), fraude bancario o transferencias, estafa en \textit{apps} de pago (Zelle, Venmo, Cash App), esquema Ponzi o piramidal, estafa de soporte técnico, estafa laboral o de empleo, estafa de caridad o donaciones, fraude de seguros, fraude corporativo o bursátil, fraude o evasión fiscal, y la categoría residual de «no relacionado con fraude financiero».
+
+Para cada \textit{tweet} el modelo asigna la categoría con mayor puntuación de similitud semántica junto a un \textit{score} de confianza (entre 0 y 1) que se conserva como variable en el \textit{dataset} final. La clasificación se ejecuta en \textit{batches} de 16 \textit{tweets} en GPU T4, con un tiempo aproximado de entre quince y veinticinco minutos para el corpus completo. Los \textit{tweets} asignados a la categoría residual se marcan como irrelevantes mediante una variable booleana \texttt{is\_relevant}, lo que permite filtrarlos en análisis posteriores o mantenerlos como control.
+
+\subsection{Validación manual sobre muestra aleatoria}
+
+Con el fin de aportar una estimación del rendimiento real del clasificador, se selecciona una muestra aleatoria de 500 \textit{tweets} que se revisan manualmente. Para cada \textit{tweet} se evalúa si la categoría asignada por el modelo es correcta, y en caso contrario se anota la categoría que la autora considera correcta. Esta validación manual aporta validez empírica a sistemas de NLP aplicados.
+
+\subsection{Auditoría y Procesamiento de Datos}
+
+% Pendiente de desarrollo.
+
+\subsection{Estudio Previo}
+
+% Pendiente de desarrollo.
+
+\subsection{Limpieza y Normalización de Datos}
+
+% Pendiente de desarrollo.

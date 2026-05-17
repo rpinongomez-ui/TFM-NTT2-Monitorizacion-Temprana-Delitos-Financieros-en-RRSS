@@ -1,0 +1,80 @@
+# =========================
+# Secretos y entornos
+# =========================
+.env
+.env.local
+*.pem
+*.key
+secrets/
+
+# =========================
+# Datos (no subir a GitHub)
+# =========================
+data/raw/*
+data/processed/*
+data/interim/*
+# pero mantener la estructura de carpetas
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/interim/.gitkeep
+
+# Datos en otros formatos comunes
+*.csv
+*.parquet
+*.feather
+*.pickle
+*.pkl
+*.h5
+*.hdf5
+
+# Excepción: si en algún momento queremos versionar un CSV pequeño de ejemplo,
+# se añade explícitamente con `git add -f data/raw/ejemplo.csv`.
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter outputs (opcional: si los quieres versionar quita esta línea)
+# *.ipynb
+
+# =========================
+# LaTeX (Overleaf espejo)
+# =========================
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.lot
+*.lof
+*.out
+*.synctex.gz
+*.toc
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# =========================
+# SO / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,150 @@
+\documentclass[a4paper,12pt]{article}
+
+% -------------------- PACKAGES --------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+%\usepackage[spanish, es-tabla]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, total={160mm,240mm}, top=30mm}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{sectsty}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tocloft}
+
+%------------ Citation style
+\usepackage[round,authoryear]{natbib}
+\bibliographystyle{apalike} % Orden alfabético
+
+%\usepackage[numbers,square]{natbib} 
+%\bibliographystyle{unsrtnat} % Orden numérico por aparición
+
+% -------------------- BABEL SPANISH CORRECTIONS --------------------
+\addto\captionsspanish{%
+  \renewcommand{\refname}{Bibliografía}
+  \renewcommand{\listfigurename}{Lista de figuras}
+  \renewcommand{\listtablename}{Índice de tablas}
+}
+
+% -------------------- HEADER CUSTOMIZATION --------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+% -------------------- PARAGRAPH SPACING --------------------
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0pt}
+
+% -------------------- DOCUMENT START --------------------
+\begin{document}
+
+% -------------------- TITLE PAGE --------------------
+\begin{titlepage}
+\begin{flushleft}
+\includegraphics[width=10cm]{Marca_DATAI_red.png}
+\end{flushleft}
+
+\vspace{4cm}
+\centering
+
+{\LARGE\bfseries Monitorización Temprana de Fraude Financiero en Redes Sociales}
+
+\vspace{3.5cm}
+
+{\large\bfseries Trabajo Fin de Máster\\
+Máster Universitario en Big Data Science\\
+\vspace{1cm}
+Curso académico 2024--2025}
+
+\vspace{3.5cm}
+
+\large\textbf{Autoras:} Reyes Piñón Gómez \\[0.1cm]
+\large\phantom{\textbf{Autoras:}} Alicia Alcántara Troncoso \\[0.2cm]
+\large\textbf{Tutora académica:} Stella Maris Salvatierra \\[0.2cm]
+\large\textbf{Tutor de empresa:} Roque Alejandro Rodríguez Cabreja\\[1cm]
+
+\large Madrid, a \today
+\end{titlepage}
+\thispagestyle{empty}
+
+% -------------------- FRONT MATTER --------------------
+\pagenumbering{gobble}
+\thispagestyle{empty}
+
+% Resumen (sin numeración, pero en TOC)
+\section*{Resumen}
+\markboth{Resumen}{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+\input{Chapters/01 - Resumen/01_resumen}
+\clearpage
+
+% Índice (compactado para que entre en una sola página)
+\pagenumbering{gobble}
+{\setlength{\parskip}{0pt}
+\renewcommand{\baselinestretch}{0.95}\selectfont
+\setlength{\cftbeforesecskip}{2pt}
+\setlength{\cftbeforesubsecskip}{1pt}
+\setlength{\cftbeforesubsubsecskip}{1pt}
+\tableofcontents
+\par}
+
+% Lista de figuras
+\clearpage
+\pagenumbering{roman}
+\setcounter{page}{1}
+\addcontentsline{toc}{section}{Lista de figuras}
+\listoffigures
+
+% Lista de tablas
+\clearpage
+\addcontentsline{toc}{section}{Índice de tablas}
+\listoftables
+
+% Glosario (sin numeración, pero en TOC)
+\clearpage
+\section*{Glosario de Acrónimos}
+\markboth{Glosario}{Glosario}
+\addcontentsline{toc}{section}{Glosario de Acrónimos}
+\input{Chapters/07 - Glosario/07_glosario}
+
+% -------------------- MAIN BODY --------------------
+\clearpage
+\pagenumbering{arabic}
+
+\section{Introducción}
+\input{Chapters/02 - Introduccion/02_introduccion}
+
+\clearpage
+\section{Materiales y Métodos}
+\input{Chapters/03 - Materiales y Metodos/03_materiales_metodos}
+
+\clearpage
+\section{Resultados}
+\input{Chapters/04 - Resultados/04_resultados}
+
+\clearpage
+\section{Discusión}
+\input{Chapters/05 - Discusion/05_discusion}
+
+\clearpage
+\section{Conclusiones y Trabajo Futuro}
+\input{Chapters/06 - Conclusiones/06_conclusiones}
+
+% -------------------- BIBLIOGRAPHY --------------------
+\clearpage
+\addcontentsline{toc}{section}{Bibliografía}
+\bibliography{bibliografia}
+
+% -------------------- APPENDICES --------------------
+\clearpage
+\section*{Anexos}
+\addcontentsline{toc}{section}{Anexos}
+\input{Chapters/08 - Anexo/08_anexos}
+
+\end{document}
