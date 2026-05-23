@@ -78,3 +78,10 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+# =========================
+# Excepción: datasets finales del TFM
+# Repo PRIVADO. Estos dos CSV contienen datos personales (RGPD):
+# el repositorio NO debe hacerse público.
+# =========================
+!data/raw/scam_us_FINAL_v8.csv
+!data/raw/scam_us_FINAL_classified.csv
