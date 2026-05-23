@@ -1,66 +1,80 @@
 # Datos del proyecto
 
-Los datasets de tweets **NO se versionan en Git** por razones de:
+> ⚠️ **REPOSITORIO PRIVADO — NO HACER PÚBLICO**
+>
+> Este repositorio contiene datasets con **datos personales de usuarios reales**
+> (nombres de usuario, nombres de perfil, ubicaciones declaradas y texto íntegro
+> de publicaciones). Por este motivo, el repositorio **debe permanecer privado**
+> de forma permanente. Hacerlo público supondría una infracción del RGPD y de los
+> términos de servicio de la API de X. El historial de Git conserva los archivos
+> aunque se eliminen posteriormente, por lo que esta restricción es definitiva.
 
-- **Privacidad (RGPD):** contienen usernames, ubicaciones declaradas y textos personales identificables.
-- **Términos de servicio de X (Twitter):** prohíben la redistribución de tweets en bloque fuera de la API. La práctica académica estándar es compartir solo IDs y permitir la rehidratación por parte de cada investigador con su propio acceso a la API.
-- **Tamaño y rendimiento:** los CSVs (cientos de MB en algunas iteraciones) ralentizarían las operaciones de Git y consumirían cuota de almacenamiento del repositorio.
+## Contenido de datos versionado
+
+A diferencia de la práctica habitual (no versionar datos), en este repositorio
+**privado** se incluyen los dos datasets finales del proyecto, a petición de la
+dirección del TFM y para facilitar su evaluación:
+
+| Archivo | Contenido | Filas |
+|---|---|---|
+| `data/raw/scam_us_FINAL_v8.csv` | Corpus limpio tras filtros estructurales, anti-bot y geográficos. Entrada del pipeline de NLP. | 1.928 |
+| `data/raw/scam_us_FINAL_classified.csv` | Corpus final con tópicos (BERTopic) y clasificación tipológica (zero-shot BART-MNLI). **Dataset definitivo de análisis.** | 1.928 |
+
+El resto de archivos de `data/` (CSV intermedios, checkpoints, iteraciones
+descartadas) **no se versionan** — permanecen solo en local y en copia de
+seguridad privada.
 
 ## Estructura local
 
-En las máquinas de las autoras, los datos viven en:
-
 ```
 data/
-├── raw/         # CSVs en bruto descargados de la API (sin filtros)
-├── processed/   # Corpus tras limpieza y filtros estructurales
-└── interim/     # Resultados intermedios (BERTopic, clasificación zero-shot)
+├── raw/         # CSV descargados y procesados
+├── processed/   # Resultados derivados (ej. Excel de entrega)
+└── interim/     # Resultados intermedios
 ```
 
-Todas estas carpetas están en `.gitignore`. Sólo se versiona este `README.md` y los archivos `.gitkeep` que mantienen la estructura de carpetas en el repo.
+## Backup
 
-## Backup y acceso
+Además del repositorio privado, los datos se conservan en una carpeta privada
+de Google Drive compartida entre las autoras y la dirección del TFM.
 
-- **Local:** `~/Documents/tfm_repo/data/raw/` en las máquinas de las autoras.
-- **Copia de seguridad:** Google Drive privado compartido entre autoras y tutoras.
-- **Acceso externo:** los datos no se distribuyen públicamente. Para acceso bajo solicitud, contactar a las autoras.
+## Columnas del dataset definitivo
 
-## Datasets generados durante el proyecto
+`scam_us_FINAL_classified.csv` incluye, entre otras:
 
-A modo de inventario, los CSVs principales que produce el pipeline son:
+- **Identificación y metadatos:** `tweet_id`, `created_at`, `text`, `username`,
+  `user_location`, métricas públicas del tweet.
+- **Topic modeling (BERTopic):** `bertopic_id`, `bertopic_keywords`.
+- **Clasificación tipológica (zero-shot BART-MNLI):** `predicted_category`,
+  `confidence_score`, `is_relevant`.
 
-| Archivo | Contenido | Notebook que lo genera |
-|---|---|---|
-| `scam_us_FINAL_raw.csv` | Tirada bruta con `place_country:US` (327 tweets) | `06_etl_FINAL.ipynb` |
-| `scam_us_run2_raw.csv` | Tirada bruta sin filtro geográfico (~12.000 tweets) | `07_etl_FINAL_consolidado.ipynb` |
-| `scam_us_CONSOLIDATED_dedup.csv` | Unión de ambas tiradas, deduplicada | `07_etl_FINAL_consolidado.ipynb` |
-| `scam_us_CONSOLIDATED_clean.csv` | Tras filtros estructurales (~2.300 tweets) | `07_etl_FINAL_consolidado.ipynb` |
-| `scam_us_FINAL_v8.csv` | Corpus final tras filtros anti-bot/no-EEUU (~1.900 tweets) | `08_limpieza_anti_bot_no_usa.ipynb` |
+La columna `predicted_category` es la empleada como variable principal en el
+análisis del TFM.
 
 ## Reproducibilidad
 
-El corpus puede regenerarse ejecutando, en orden:
+El corpus puede regenerarse ejecutando, en orden, los notebooks de `notebooks/`:
 
-1. `notebooks/06_etl_FINAL.ipynb` — primera tirada con `place_country:US`.
-2. `notebooks/07_etl_FINAL_consolidado.ipynb` — segunda tirada sin filtro geográfico y unión con la anterior.
-3. `notebooks/08_limpieza_anti_bot_no_usa.ipynb` — limpieza final (anti-bot, no-EEUU, cap por usuario).
+1. `01_etl_extraction.ipynb` — extracción del corpus desde la API de X.
+2. `02_etl_cleaning.ipynb` — limpieza estructural, anti-bot y filtrado geográfico.
+3. `03_nlp_classification.ipynb` — topic modeling y clasificación zero-shot.
+4. `04_dataframe_export.ipynb` — exportación del dataframe final.
+
+La carpeta `notebooks/experimentos/` contiene iteraciones alternativas exploradas
+durante el desarrollo (clasificación con etiquetas refinadas y consolidación
+híbrida), conservadas a efectos de trazabilidad metodológica pero no empleadas
+en el resultado final.
 
 ### Requisitos
 
-- Acceso a la API de X v2 endpoint `/search/all`. Requiere tier Enterprise, Academic Research o DSA.
-- Token de tipo *bearer* configurado en un archivo `.env` (ver `.env.example` en la raíz del repo).
-- Entorno Python con las dependencias listadas en `requirements.txt`.
+- Acceso a la API de X v2, endpoint `/search/all` (tier Enterprise, Academic
+  Research o DSA).
+- Token *bearer* configurado en `.env` (ver `.env.example`).
+- Entorno Python con las dependencias del proyecto (ver `requirements.txt`).
 
-### Coste API estimado
+## Política de uso
 
-La regeneración completa del corpus consume aproximadamente:
-
-- Tirada 1 (con `place_country:US`): ~10-15 llamadas API.
-- Tirada 2 (sin filtro geográfico): ~40 llamadas API.
-- Total estimado: ~50-55 llamadas al endpoint `/search/all`.
-
-## Política de uso interno
-
-- Los datos sólo se utilizan en el marco de este Trabajo Fin de Máster.
-- No se redistribuyen ni se cargan en servicios externos públicos.
-- Cualquier publicación derivada (memoria, defensa, artículos) sigue las prácticas habituales: agregados, ejemplos anonimizados o referencias a IDs.
+Los datos se utilizan exclusivamente en el marco de este Trabajo Fin de Máster.
+No se redistribuyen fuera de este repositorio privado ni se cargan en servicios
+externos de acceso público. Cualquier material derivado de difusión pública
+(memoria, defensa, publicaciones) emplea datos agregados o ejemplos anonimizados.
