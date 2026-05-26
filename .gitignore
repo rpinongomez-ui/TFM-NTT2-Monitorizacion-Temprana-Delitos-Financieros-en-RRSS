@@ -85,3 +85,6 @@ Thumbs.db
 # =========================
 !data/raw/scam_us_FINAL_v8.csv
 !data/raw/scam_us_FINAL_classified.csv
+# Datasets finales del corpus español (repo privado)
+!data/raw/scam_es_FINAL_v2.csv
+!data/raw/scam_es_FINAL_classified_corregido.csv
